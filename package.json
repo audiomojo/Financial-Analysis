@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm start"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
+  }
+}
