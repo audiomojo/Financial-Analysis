@@ -1,3 +1,4 @@
+/* Existing Styles */
 .App {
   text-align: center;
 }
@@ -35,4 +36,101 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* New Styles */
+
+/* General styles */
+body {
+  font-family: Arial, sans-serif;
+}
+
+/* Header */
+header {
+  text-align: center;
+  padding: 20px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Widgets Container */
+.widgets-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px; /* Space between the widgets */
+}
+
+/* Widget styles */
+.widget {
+  width: 500px;
+  background-color: #e0f7fa; /* Light blue background */
+  border-radius: 10px;
+  padding: 20px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column; /* Stack content and average footer */
+  justify-content: space-between;
+}
+
+/* Graph Widget specifically (widget 2) */
+.widget.graph {
+  background-color: #fff9c4; /* Light yellow background */
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Align content at the top */
+}
+
+/* Widget table */
+.widget table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  table-layout: auto;
+  margin: 0 auto;
+}
+
+/* Widget header */
+.widget h3 {
+  text-align: center;
+}
+
+/* Table header */
+table thead th {
+  padding: 10px;
+  text-align: left; /* Ensure headers are left-aligned */
+}
+
+/* Table cell styling */
+td {
+  padding: 10px;
+  color: black;
+}
+
+td:first-child {
+  text-align: left;
+  font-weight: bold;
+}
+
+td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Footer styles for average */
+.widget-footer {
+  background-color: #90caf9;  /* Medium blue background */
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: black;
+}
+
+/* Specific styles for Widget 3 */
+.widget th, .widget td {
+  text-align: left; /* Ensure both headers and data are left-aligned */
 }

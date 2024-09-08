@@ -3,10 +3,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
-const { addExpense, addExemptions, expenses} = require('./models/expenseModel');
-const { addMapping} = require('./models/mappingModel');
+const { addExpense, addExemptions, expenses } = require('./models/expenseModel');
+const { addMapping, mappings } = require('./models/mappingModel');
 const { setExpenseData, setMappingData } = require('./models/analysisModel');
-
 const logger = require('./logger');
 
 const app = express();
@@ -33,8 +32,8 @@ app.use('/api/analysis', analysisRoutes);
 // Load the exceptions file into the expenseExceptions array
 function loadExpenseExceptions(dataFilePath){
     try {
-        const data = fs.readFileSync(dataFilePath, 'utf-8');  // Read the file contents as a string
-        expenseExceptions = data.split('\n').map(line => line.trim());  // Split by newlines and trim each line
+        const data = fs.readFileSync(dataFilePath, 'utf-8');
+        expenseExceptions = data.split('\n').map(line => line.trim());
         addExemptions(expenseExceptions);
         logger.info('Loaded expense exceptions:', expenseExceptions);
     } catch (err) {
@@ -64,22 +63,22 @@ function loadMappingConfig(dataFilePath) {
         .pipe(csv())
         .on('data', (data) => {
             const mapping = {
-                Key: Object.values(data)[0], // Fix for CSV parser issue
+                Key: Object.values(data)[0],
                 CoreExpense: data['CoreExpense'].trim().toUpperCase() === 'Y',
                 Category1: data['Category1'],
-                Category1Percentage: parseInt(data['Category1Percentage'],10) || 0,
+                Category1Percentage: parseInt(data['Category1Percentage'], 10) || 0,
                 Category2: data['Category2'],
-                Category2Percentage: parseInt(data['Category2Percentage'],10) || 0,
+                Category2Percentage: parseInt(data['Category2Percentage'], 10) || 0,
                 Category3: data['Category3'],
-                Category3Percentage: parseInt(data['Category3Percentage'],10) || 0,
+                Category3Percentage: parseInt(data['Category3Percentage'], 10) || 0,
             };
             addMapping(mapping);
         })
         .on('end', () => {
-            logger.info('CSV file loaded and data processed');
+            logger.info('Mapping CSV file loaded and data processed');
         })
         .on('error', (err) => {
-            logger.error(`Error reading CSV file: ${err.message}`);
+            logger.error(`Error reading mapping CSV file: ${err.message}`);
         });
 }
 
@@ -88,13 +87,9 @@ loadDataFile(path.join(__dirname, 'data/america-first-ytd.csv'));
 loadDataFile(path.join(__dirname, 'data/citi-ytd.csv'));
 loadMappingConfig(path.join(__dirname, 'configurations/mapping.csv'));
 
-// Catch all other routes and return the index.html file
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
-});
-
-// Start the server
+// Inject data into analysisModel
 app.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT}`);
     setExpenseData(expenses());
+    setMappingData(mappings());  // Inject mapping data into the analysis model
 });

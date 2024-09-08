@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './App.css';  // Import CSS file
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -15,80 +16,167 @@ ChartJS.register(
     Legend
 );
 
+const formatCurrency = (amount) => {
+    if (amount === undefined || amount === null) {
+        amount = 0;  // Default to 0 if the amount is undefined or null
+    }
+    return `$${amount.toFixed(2)}`;  // Format with $ sign and 2 decimal places
+};
+
+// Reusable Widget component
+function Widget({ children, className }) {
+    return (
+        <div className={`widget ${className || ''}`}>
+            {children}
+        </div>
+    );
+}
+
+// Reusable Table component
+function Table({ data, columns }) {
+    return (
+        <table>
+            <thead>
+            <tr>
+                {columns.map((col, index) => (
+                    <th key={index}>{col.header}</th>
+                ))}
+            </tr>
+            </thead>
+            <tbody>
+            {data.map((row, index) => (
+                <tr key={index}>
+                    {columns.map((col, colIndex) => (
+                        <td key={colIndex}>{col.render(row)}</td>
+                    ))}
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    );
+}
+
 function App() {
     const [monthlyTotals, setMonthlyTotals] = useState(null);
+    const [coreVsNonCoreTotals, setCoreVsNonCoreTotals] = useState(null);
     const baseURL = process.env.REACT_APP_BACKEND_API_BASE_URL;
 
     useEffect(() => {
-        // Fetch the monthly totals data from the backend API
         axios.get(`${baseURL}/analysis/getMonthlyTotals`).then(response => {
             setMonthlyTotals(response.data);
         }).catch(error => {
             console.error('Error fetching monthly totals:', error);
         });
-    }, []);
 
-    // Format amount with $ sign and two decimal places
-    const formatCurrency = (amount) => {
-        return `$${amount.toFixed(2)}`;
-    };
+        axios.get(`${baseURL}/analysis/getCoreVsNonCoreExpenseMonthlyTotals`).then(response => {
+            setCoreVsNonCoreTotals(response.data);
+        }).catch(error => {
+            console.error('Error fetching core vs non-core expense totals:', error);
+        });
+    }, [baseURL]);
 
-    // Calculate the running average for the months with non-zero totals
-    const calculateRunningAverage = () => {
-        if (!monthlyTotals) return [];
+    // Return early if data hasn't loaded yet
+    if (!monthlyTotals || !coreVsNonCoreTotals) {
+        return <div>Loading...</div>;
+    }
+
+    const calculateRunningAverage = (totals) => {
         const runningAverages = [];
         let totalSum = 0;
         let count = 0;
 
-        Object.values(monthlyTotals).forEach(total => {
+        Object.values(totals).forEach(total => {
             if (total > 0) {
                 totalSum += total;
                 count++;
-                runningAverages.push(totalSum / count);  // Calculate running average
+                runningAverages.push(totalSum / count);
             } else {
-                runningAverages.push(null);  // Use null to not display points for zero months
+                runningAverages.push(null);
             }
         });
 
         return runningAverages;
     };
 
-    // Calculate the average of non-zero monthly totals
-    const calculateAverage = () => {
-        if (!monthlyTotals) return 0;
-        const nonZeroTotals = Object.values(monthlyTotals).filter(total => total > 0);
+    const calculateAverage = (totals) => {
+        const nonZeroTotals = Object.values(totals).filter(total => total > 0);
         const totalSum = nonZeroTotals.reduce((sum, total) => sum + total, 0);
         return nonZeroTotals.length > 0 ? totalSum / nonZeroTotals.length : 0;
     };
 
-    // Prepare chart data
     const prepareChartData = () => {
-        if (!monthlyTotals) return {};
-
-        const labels = Object.keys(monthlyTotals);  // Month names as labels
-        const data = Object.values(monthlyTotals).map(total => total > 0 ? total : 0);  // Bar chart data
+        const labels = Object.keys(monthlyTotals);
+        const data = Object.values(monthlyTotals).map(total => total > 0 ? total : 0);
 
         return {
-            labels: labels,
+            labels,
             datasets: [
                 {
                     label: 'Monthly Totals',
-                    data: data,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',  // Light blue color for bars
+                    data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1,
                     type: 'bar',
                 },
                 {
                     label: 'Running Average',
-                    data: calculateRunningAverage(),
-                    borderColor: 'rgba(255, 99, 132, 1)',  // Red line for running average
+                    data: calculateRunningAverage(monthlyTotals),
+                    borderColor: 'rgba(255, 99, 132, 1)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderWidth: 2,
                     fill: false,
                     type: 'line',
-                    tension: 0.3,  // Smoothness of the line
+                    tension: 0.3,
                     pointRadius: 3,
+                }
+            ]
+        };
+    };
+
+    const prepareStackedChartData = () => {
+        const labels = Object.keys(coreVsNonCoreTotals.core);
+        const coreData = Object.values(coreVsNonCoreTotals.core);
+        const nonCoreData = Object.values(coreVsNonCoreTotals.nonCore);
+        const unmappedData = Object.values(coreVsNonCoreTotals.unmapped);
+
+        return {
+            labels,
+            datasets: [
+                {
+                    label: 'Core Expenses',
+                    data: coreData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)', // Light blue for core
+                },
+                {
+                    label: 'Non-Core Expenses',
+                    data: nonCoreData,
+                    backgroundColor: 'rgba(255, 206, 86, 0.5)', // Yellow for non-core
+                },
+                {
+                    label: 'Unmapped Expenses',
+                    data: unmappedData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)', // Light green for unmapped
+                },
+                {
+                    label: 'Core Running Average',
+                    data: calculateRunningAverage(coreVsNonCoreTotals.core),
+                    type: 'line',
+                    borderColor: 'rgba(54, 162, 235, 1)', // Blue for core average
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Non-Core Running Average',
+                    data: calculateRunningAverage(coreVsNonCoreTotals.nonCore),
+                    type: 'line',
+                    borderColor: 'rgba(255, 206, 86, 1)', // Yellow for non-core average
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    borderWidth: 2
                 }
             ]
         };
@@ -96,112 +184,87 @@ function App() {
 
     return (
         <div className="App">
-            <header style={{ textAlign: 'center', padding: '20px', fontSize: '24px', fontWeight: 'bold' }}>
-                Financial Expense Analysis
-            </header>
+            <header>Financial Expense Analysis</header>
 
-            {/* Responsive widget container */}
-            <div className="widgets-container" style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: '20px',  // Space between the widgets
-            }}>
+            <div className="widgets-container">
 
-                {/* First Widget: Text Totals */}
-                <div className="widget" style={{
-                    width: '500px',
-                    height: '500px',
-                    backgroundColor: '#e0f7fa',  // Light blue background
-                    borderRadius: '10px',
-                    padding: '20px',
-                    overflow: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',  // Stack content and average footer
-                    justifyContent: 'space-between'
-                }}>
-                    <div>
-                        <h3 style={{ textAlign: 'center' }}>Monthly Totals</h3>
-                        {monthlyTotals ? (
-                            <table style={{
-                                width: '100%',
-                                textAlign: 'left',
-                                borderCollapse: 'collapse',
-                                tableLayout: 'auto',
-                                margin: '0 auto',
-                            }}>
-                                <tbody>
-                                {Object.entries(monthlyTotals)
-                                    .filter(([month, total]) => total > 0)  // Filter out totals less than or equal to zero
-                                    .map(([month, total]) => (
-                                        <tr key={month}>
-                                            <td style={{
-                                                fontWeight: 'bold',
-                                                color: 'black',
-                                                padding: '10px'
-                                            }}>
-                                                {month}
-                                            </td>
-                                            <td style={{
-                                                color: 'black',
-                                                padding: '10px',
-                                                textAlign: 'right',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {formatCurrency(total)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            'Loading...'
-                        )}
+                {/* Widget 1: Monthly Totals */}
+                <Widget>
+                    <h3>Monthly Totals</h3>
+                    <Table
+                        data={Object.entries(monthlyTotals).filter(([_, total]) => total > 0)}
+                        columns={[
+                            { header: 'Month', render: ([month]) => month },
+                            { header: 'Amount', render: ([_, total]) => formatCurrency(total) }
+                        ]}
+                    />
+                    <div className="widget-footer">
+                        Average Monthly Expense: {formatCurrency(calculateAverage(monthlyTotals))}
                     </div>
+                </Widget>
 
-                    {/* Footer for average monthly expense */}
-                    <div style={{
-                        backgroundColor: '#90caf9',  // Medium blue background
-                        padding: '15px',
-                        borderRadius: '8px',
-                        marginTop: '20px',
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        color: 'black'
-                    }}>
-                        Average Monthly Expense: {formatCurrency(calculateAverage())}
-                    </div>
-                </div>
-
-                {/* Second Widget: Column Graph */}
-                <div className="widget" style={{
-                    width: '500px',
-                    height: '500px',
-                    backgroundColor: '#fff9c4',  // Light yellow background for the widget
-                    borderRadius: '10px',
-                    padding: '20px',
-                }}>
-                    <h3 style={{ textAlign: 'center' }}>Monthly Totals with Running Average</h3>
-                    {monthlyTotals ? (
-                        <Bar
-                            data={prepareChartData()}
-                            options={{
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return `$${value.toFixed(2)}`;  // Format Y-axis labels as currency
-                                            }
-                                        }
+                {/* Widget 2: Monthly Totals with Running Average */}
+                <Widget className="graph">
+                    <h3>Monthly Totals with Running Average</h3>
+                    <Bar
+                        data={prepareChartData()}
+                        options={{
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: value => `$${value.toFixed(2)}`
                                     }
                                 }
-                            }}
-                        />
-                    ) : (
-                        'Loading...'
-                    )}
-                </div>
+                            }
+                        }}
+                    />
+                </Widget>
+
+                {/* Widget 3: Core vs Non-Core Totals */}
+                <Widget>
+                    <h3>Core vs Non-Core Totals</h3>
+                    <Table
+                        data={Object.keys(coreVsNonCoreTotals.core).filter(month => (
+                            coreVsNonCoreTotals.core[month] > 0 ||
+                            coreVsNonCoreTotals.nonCore[month] > 0 ||
+                            coreVsNonCoreTotals.unmapped[month] > 0
+                        ))}
+                        columns={[
+                            { header: 'Month', render: month => month },
+                            { header: 'Core', render: month => formatCurrency(coreVsNonCoreTotals.core[month]) },
+                            { header: 'Non-Core', render: month => formatCurrency(coreVsNonCoreTotals.nonCore[month]) },
+                            { header: 'Unmapped', render: month => formatCurrency(coreVsNonCoreTotals.unmapped[month]) }
+                        ]}
+                    />
+                    <div className="widget-footer">
+                        Averages - Core: {formatCurrency(calculateAverage(coreVsNonCoreTotals.core))},
+                        Non-Core: {formatCurrency(calculateAverage(coreVsNonCoreTotals.nonCore))},
+                        Unmapped: {formatCurrency(calculateAverage(coreVsNonCoreTotals.unmapped))}
+                    </div>
+                </Widget>
+
+                {/* Widget 4: Stacked Column Chart */}
+                <Widget className="graph">
+                    <h3>Core, Non-Core, and Unmapped Stacked Chart with Running Average</h3>
+                    <Bar
+                        data={prepareStackedChartData()}
+                        options={{
+                            scales: {
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: value => `$${value.toFixed(2)}`
+                                    }
+                                },
+                                x: {
+                                    stacked: true
+                                }
+                            }
+                        }}
+                    />
+                </Widget>
 
             </div>
         </div>
