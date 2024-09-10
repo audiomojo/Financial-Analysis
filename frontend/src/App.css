@@ -1,45 +1,3 @@
-/* Existing Styles */
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* New Styles */
-
 /* General styles */
 body {
   font-family: Arial, sans-serif;
@@ -130,7 +88,31 @@ td:last-child {
   color: black;
 }
 
-/* Specific styles for Widget 3 */
-.widget th, .widget td {
-  text-align: left; /* Ensure both headers and data are left-aligned */
+/* Month buttons for Widget 5 */
+.month-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.month-buttons button {
+  background-color: #fff9c4;
+  border: 2px solid #ddd;
+  border-radius: 15px;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.month-buttons button.active {
+  background-color: #ffeb3b;
+}
+
+.month-buttons button:hover {
+  background-color: #ffeb3b;
+}
+
+.widget-5 .graph {
+  height: 250px; /* Same as other graphs */
 }

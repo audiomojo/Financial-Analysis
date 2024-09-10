@@ -9,10 +9,16 @@ const addExemptions = (exemptions) => {
 }
 
 const addExpense = (expense) => {
+    // Check if the expense or its fields are undefined to prevent errors
+    if (!expense || !expense.Description || !expense.Date || (!expense.Debit && !expense.Credit)) {
+        logger.error('Invalid expense data:', expense);
+        return;
+    }
+
     const description = expense.Description.toLowerCase(); // Convert to lowercase for case-insensitive comparison
 
     // Check if the description contains any of the exception strings
-    const isExemption = expenseExemptions.some(exemption => {
+    const isExemption = expenseExemptions && expenseExemptions.some(exemption => {
         // Ensure the exemption is a string
         if (typeof exemption === 'string') {
             return description.includes(exemption.toLowerCase());
@@ -30,7 +36,7 @@ const addExpense = (expense) => {
     expenseData.push({
         date: expense.Date,
         description: expense.Description,
-        amount: Math.abs(parseFloat(expense.Debit) || 0)
+        amount: Math.abs(parseFloat(expense.Debit) || parseFloat(expense.Credit) || 0) // Handle both Debit and Credit
     });
 
     logger.info('Expense Transaction: Date: ' + expenseData[expenseData.length - 1].date + '\tDescription: ' + expenseData[expenseData.length - 1].description + '\tAmount: ' + expenseData[expenseData.length - 1].amount);

@@ -59,6 +59,8 @@ function Table({ data, columns }) {
 function App() {
     const [monthlyTotals, setMonthlyTotals] = useState(null);
     const [coreVsNonCoreTotals, setCoreVsNonCoreTotals] = useState(null);
+    const [categoryTotals, setCategoryTotals] = useState(null); // for Widget 5
+    const [selectedMonth, setSelectedMonth] = useState('January'); // for Widget 5
     const baseURL = process.env.REACT_APP_BACKEND_API_BASE_URL;
 
     useEffect(() => {
@@ -73,10 +75,17 @@ function App() {
         }).catch(error => {
             console.error('Error fetching core vs non-core expense totals:', error);
         });
+
+        // Fetch category totals for Widget 5
+        axios.get(`${baseURL}/analysis/getCategoryTotalsByMonth`).then(response => {
+            setCategoryTotals(response.data);
+        }).catch(error => {
+            console.error('Error fetching category totals:', error);
+        });
     }, [baseURL]);
 
     // Return early if data hasn't loaded yet
-    if (!monthlyTotals || !coreVsNonCoreTotals) {
+    if (!monthlyTotals || !coreVsNonCoreTotals || !categoryTotals) {
         return <div>Loading...</div>;
     }
 
@@ -182,6 +191,27 @@ function App() {
         };
     };
 
+    // Prepare data for Widget 5
+    const prepareCategoryData = () => {
+        const categories = Object.keys(categoryTotals[selectedMonth]);
+        const amounts = Object.values(categoryTotals[selectedMonth]);
+
+        return {
+            labels: categories,
+            datasets: [{
+                label: `Categories for ${selectedMonth}`,
+                data: amounts,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+    };
+
+    const handleMonthClick = (month) => {
+        setSelectedMonth(month);
+    };
+
     return (
         <div className="App">
             <header>Financial Expense Analysis</header>
@@ -260,6 +290,35 @@ function App() {
                                 },
                                 x: {
                                     stacked: true
+                                }
+                            }
+                        }}
+                    />
+                </Widget>
+
+                {/* Widget 5: Categories by Month */}
+                <Widget className="graph widget-5">
+                    <h3>Categories By Month: {selectedMonth}</h3>
+                    <div className="month-buttons">
+                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((month, index) => (
+                            <button
+                                key={index}
+                                className={selectedMonth === month ? 'active' : ''}
+                                onClick={() => handleMonthClick(month)}
+                            >
+                                {month.substring(0, 3).toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
+                    <Bar
+                        data={prepareCategoryData()}
+                        options={{
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: value => `$${value.toFixed(2)}`
+                                    }
                                 }
                             }
                         }}
