@@ -83,8 +83,9 @@ function loadMappingConfig(dataFilePath) {
 }
 
 loadExpenseExceptions(path.join(__dirname, 'configurations/expense-exemptions.txt'));
-loadDataFile(path.join(__dirname, 'data/america-first-ytd.csv'));
-loadDataFile(path.join(__dirname, 'data/citi-ytd.csv'));
+// loadDataFile(path.join(__dirname, 'data/america-first-ytd.csv'));
+// loadDataFile(path.join(__dirname, 'data/citi-ytd.csv'));
+loadDataFile(path.join(__dirname, 'data/expenses.csv'));
 loadMappingConfig(path.join(__dirname, 'configurations/mapping.csv'));
 
 // Inject data into analysisModel
