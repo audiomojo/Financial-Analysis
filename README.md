@@ -1,0 +1,3 @@
+This is an experiemnt in writing code with ChatGPT to do some useful for myself, while introducing myself to new technologies.  Node.js and React.  While I've dabbled with Node.js in the past, I've not built RESTful web services with node.  I wanted to see how well ChatGPT would do and if I could easily understand and follow the code.
+
+It turns out that ChatGPT did a pretty good job.  I had to push it in the right direction several times and unwind some things it was doing but eventually we got where I wanted.  I'm estimating a 5x velocity increase vs. writing the code myself without AI assistance.  I was impressed with how well it did.
